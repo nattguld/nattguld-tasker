@@ -102,15 +102,15 @@ public abstract class Task implements Runnable {
 			ex.printStackTrace();
 			respState = TaskState.EXCEPTION;
 		}
-		if (getState() != TaskState.CANCEL) {
-			setState(respState);
-		}
-		if (respState == TaskState.RUNNING) {
-			setStatus("Fatal Error, task state is still running after task execution");
-			setState(TaskState.EXCEPTION);
-			return false;
-		}
 		if (!hasProperty(TaskProperty.REPEAT)) {
+			if (getState() != TaskState.CANCEL) {
+				setState(respState);
+			}
+			if (respState == TaskState.RUNNING) {
+				setStatus("Fatal Error, task state is still running after task execution");
+				setState(TaskState.EXCEPTION);
+				return false;
+			}
 			if (respState == TaskState.FINISHED) {
 				return true;
 			}
@@ -124,7 +124,7 @@ public abstract class Task implements Runnable {
 				return true;
 			}
 		}
-		return false;
+		return !hasProperty(TaskProperty.REPEAT);
 	}
 	
 	/**
