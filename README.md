@@ -1,6 +1,25 @@
 # Nattguld Tasker
 
-## Simple example task
+## About
+Easy to use library usesful for any multi threaded applications.
+Run asynchonous, synchronous and callback tasks anywhere in your application.
+Use step tasks to build your task flows step by step and stay in full control of what's going on.
+Or keep your users updated on whats going on in your application into detail.
+
+## General Configurations
+```java
+//Whether to keep failed tasks available in a list for later review or not.
+TaskManager.getTaskConfig().setRemoveFailed(boolean value);
+
+//Limits the amount of parallell tasks being active (40 * processor cores by default)
+TaskManager.getTaskConfig().setMaxParallel(int value);
+
+//Load a task configuration you saved
+TaskManager.setTaskConfig(TaskConfig loadedConfig);
+```
+
+## Usage Examples
+### Simple example task
 ```java
 public SimpleExample extends Task {
   
@@ -18,7 +37,7 @@ TaskManager.async(new SimpleExample()); //Asynchronous
 TaskState responseState = TaskManager.sync(new SimpleExample()); //Synchronous
 ```
 
-## Example task with callback
+### Example task with callback
 ```java
 public CallbackExample extends Task implements ICallback<T> {
   
@@ -52,7 +71,7 @@ CallbackExample task = new CallbackExample();
 T cb = (T)TaskManager.callback(task);
 ```
 
-## Example step task
+### Example step task
 ```java
 public StepTaskExample extends StepTask {
   
@@ -80,7 +99,7 @@ public StepTaskExample extends StepTask {
 }
 ```
 
-## Example step task with callback
+### Example step task with callback
 ```java
 public StepTaskExample extends StepTask implements ICallback<T> {
   
