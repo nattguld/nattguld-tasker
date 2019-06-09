@@ -33,6 +33,7 @@ public CallbackExample extends Task implements ICallback<T> {
   @Override
   public TaskState executeTask() throws Exception {
     System.out.println("Hello world");
+    callbackResponse.assign(myValue);
     return TaskState.FINISHED;
   }
   
