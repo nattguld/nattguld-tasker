@@ -128,3 +128,28 @@ public StepTaskExample extends StepTask implements ICallback<T> {
   }
 }
 ```
+
+## Advanced Task Configurations & Controls
+### Task
+```java
+task.cancel(); //Cancels a task as soon as possible
+task.pause(); //Pauses a task as soon as possible
+task.unpause(); //Unpauses a task
+task.setStatus(String status); //Modifies the tasks's status message
+task.getStatus(); //Retrieves the tasks's status message
+task.setRepeatDelay(int delay); //Modifies the delay time for repeatable tasks
+
+@Override
+protected TaskProperty[] getProperties() {
+  return new TaskProperty[] { //None present by default, override your tasks to use properties
+    TaskProperty.DAEMON, //Indicate tasks as daemon for display use
+    TaskProperty.REPEAT, //Let's the task repeat in a loop rather than finishing
+    TaskProperty.IGNORE_CRITICAL //Avoids stopping the task when critical errors occur
+  };
+}
+
+@Override
+protected int getMaxAttempts() {
+  return 1; //The max amount of times the task will execute until it succeeds (default 1)
+}
+```
