@@ -1,7 +1,7 @@
 # nattguld-tasker
 
-##Simple example task
-```
+## Simple example task
+```java
 public SimpleExample extends Task {
   
   public SimpleExample() {
@@ -19,7 +19,7 @@ TaskState responseState = TaskManager.sync(new SimpleExample()); //Synchronous
 ```
 
 ##Example task with callback
-```
+```java
 public CallbackExample extends Task implements ICallback<T> {
   
   private final CallbackResponse<T> callback;
@@ -52,7 +52,7 @@ T cb = (T)TaskManager.callback(task);
 ```
 
 ##Example step task
-```
+```java
 public StepTaskExample extends StepTask {
   
   public SimpleExample() {
@@ -80,7 +80,7 @@ public StepTaskExample extends StepTask {
 ```
 
 ##Example step task with callback
-```
+```java
 public StepTaskExample extends StepTask implements ICallback<T> {
   
   private final CallbackResponse<T> callbackResponse;
