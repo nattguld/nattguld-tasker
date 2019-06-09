@@ -61,7 +61,7 @@ public StepTaskExample extends StepTask {
   }
   
   @Override
-  protected void builStepFlow(List<Step> steps) {
+  protected void buildStepFlow(List<Step> steps) {
     steps.add(new Step("Im a critical step")) {
       @Override
       public StepState execute() {
@@ -93,7 +93,7 @@ public StepTaskExample extends StepTask implements ICallback<T> {
   }
   
   @Override
-  protected void builStepFlow(List<Step> steps) {
+  protected void buildStepFlow(List<Step> steps) {
     steps.add(new CallbackStep<T>("Im a callbackstep", callbackResponse)) {
       @Override
       public T callback() {
