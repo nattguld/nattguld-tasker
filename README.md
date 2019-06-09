@@ -18,7 +18,7 @@ TaskManager.async(new SimpleExample()); //Asynchronous
 TaskState responseState = TaskManager.sync(new SimpleExample()); //Synchronous
 ```
 
-##Example task with callback
+## Example task with callback
 ```java
 public CallbackExample extends Task implements ICallback<T> {
   
@@ -51,7 +51,7 @@ CallbackExample task = new CallbackExample();
 T cb = (T)TaskManager.callback(task);
 ```
 
-##Example step task
+## Example step task
 ```java
 public StepTaskExample extends StepTask {
   
@@ -79,7 +79,7 @@ public StepTaskExample extends StepTask {
 }
 ```
 
-##Example step task with callback
+## Example step task with callback
 ```java
 public StepTaskExample extends StepTask implements ICallback<T> {
   
