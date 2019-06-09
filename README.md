@@ -5,6 +5,7 @@ Easy to use library usesful for any multi threaded applications.
 Run asynchonous, synchronous and callback tasks anywhere in your application.
 Use step tasks to build your task flows step by step and stay in full control of what's going on.
 Or keep your users updated on whats going on in your application into detail.
+_Licensed under the MIT license._
 
 ## General Configurations
 ```java
