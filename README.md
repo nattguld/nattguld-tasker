@@ -1,6 +1,6 @@
 # nattguld-tasker
 
-Simple example task:
+##Simple example task
 ```
 public SimpleExample extends Task {
   
@@ -18,7 +18,7 @@ TaskManager.async(new SimpleExample()); //Asynchronous
 TaskState responseState = TaskManager.sync(new SimpleExample()); //Synchronous
 ```
 
-Example task with callback:
+##Example task with callback
 ```
 public CallbackExample extends Task implements ICallback<T> {
   
@@ -49,4 +49,56 @@ T cb = (T)TaskManager.waitAndGetResponse(task);
 //Synchronous
 CallbackExample task = new CallbackExample();
 T cb = (T)TaskManager.callback(task);
+```
+
+##Example step task
+```
+public StepTaskExample extends StepTask {
+  
+  public SimpleExample() {
+    super("Step example");
+  }
+  
+  @Override
+  protected void builStepFlow(List<Step> steps) {
+    steps.add(new Step("Im a critical step")) {
+      @Override
+      public StepState execute() {
+        System.out.println("Hello I'm step 1");
+        return StepState.SUCCESS;
+      }
+    }
+    steps.add(new Step("Im a non-critical step", false)) {
+      @Override
+      public StepState execute() {
+        System.out.println("Hello I'm step 2");
+        return StepState.SUCCESS;
+      }
+    }
+  }
+}
+```
+
+##Example step task with callback
+```
+public StepTaskExample extends StepTask implements ICallback<T> {
+  
+  private final CallbackResponse<T> callbackResponse;
+  
+  
+  public SimpleExample() {
+    super("Step callback example");
+    this.callbackResponse = new CallbackResponse<T>(fallback);
+  }
+  
+  @Override
+  protected void builStepFlow(List<Step> steps) {
+    steps.add(new CallbackStep<T>("Im a callbackstep", callbackResponse)) {
+      @Override
+      public T callback() {
+        return myValue;
+      }
+    }
+  }
+}
 ```
