@@ -2,7 +2,6 @@ package com.nattguld.tasker.tasks;
 
 import java.util.Objects;
 
-import com.nattguld.tasker.callbacks.CallbackResponse;
 import com.nattguld.tasker.util.Misc;
 
 /**
@@ -11,7 +10,12 @@ import com.nattguld.tasker.util.Misc;
  *
  */
 
-public abstract class Task<T> {
+public abstract class Task implements Runnable {
+	
+	/**
+	 * The default task repeat delay in milliseconds.
+	 */
+	public static final int DEFAULT_REPEAT_DELAY = 1000;
 	
 	/**
 	 * The name of the task.
@@ -27,11 +31,6 @@ public abstract class Task<T> {
 	 * The current status of the task.
 	 */
 	private String status;
-	
-	/**
-	 * The execution response.
-	 */
-	private CallbackResponse<T> response;
 	
 	/**
 	 * The repeat delay.
@@ -60,7 +59,14 @@ public abstract class Task<T> {
 		this.name = name;
 		this.state = TaskState.IN_QUEUE;
 		this.status = "In queue";
-		this.repeatDelay = 1000;
+		this.repeatDelay = DEFAULT_REPEAT_DELAY;
+	}
+	
+	@Override
+	public void run() {
+		while (!handleTask()) {
+			Misc.sleep(getRepeatDelay());
+		}
 	}
 	
 	/**
@@ -76,10 +82,8 @@ public abstract class Task<T> {
 	 * Handles execution of the task.
 	 * 
 	 * @return Whether the task finished execution or not.
-	 * 
-	 * @throws Exception
 	 */
-	public boolean handleTask() throws Exception {
+	public boolean handleTask() {
 		if (getState() == TaskState.CANCEL) {
 			return true;
 		}
@@ -102,7 +106,9 @@ public abstract class Task<T> {
 			setState(respState);
 		}
 		if (respState == TaskState.RUNNING) {
-			throw new Exception("Task state is still running after task execution.");
+			setStatus("Fatal Error, task state is still running after task execution");
+			setState(TaskState.EXCEPTION);
+			return false;
 		}
 		if (!hasProperty(TaskProperty.REPEAT)) {
 			if (respState == TaskState.FINISHED) {
@@ -118,7 +124,6 @@ public abstract class Task<T> {
 				return true;
 			}
 		}
-		Misc.sleep(getRepeatDelay());
 		return false;
 	}
 	
@@ -137,7 +142,7 @@ public abstract class Task<T> {
 	 * 
 	 * @return the task.
 	 */
-	public Task<T> cancel() {
+	public Task cancel() {
 		setState(TaskState.CANCEL);
 		return this;
 	}
@@ -147,7 +152,7 @@ public abstract class Task<T> {
 	 * 
 	 * @return The task.
 	 */
-	public Task<T> pause() {
+	public Task pause() {
 		if (getState() == TaskState.CANCEL || getState() == TaskState.ERROR 
 				|| getState() == TaskState.EXCEPTION) {
 			return this;
@@ -160,7 +165,7 @@ public abstract class Task<T> {
 	 * 
 	 * @return The task.
 	 */
-	public Task<T> unpause() {
+	public Task unpause() {
 		if (getState() != TaskState.PAUSED) {
 			return this;
 		}
@@ -183,7 +188,7 @@ public abstract class Task<T> {
 	 * 
 	 * @return The task.
 	 */
-	protected Task<T> setState(TaskState state) {
+	protected Task setState(TaskState state) {
 		this.state = state;
 		return this;
 	}
@@ -198,6 +203,16 @@ public abstract class Task<T> {
 	}
 	
 	/**
+	 * Retrieves whether the task is active or not.
+	 * 
+	 * @return The result.
+	 */
+	public boolean isActive() {
+		return getState() == TaskState.IN_QUEUE || getState() == TaskState.RUNNING 
+				|| getState() == TaskState.PAUSED;
+	}
+	
+	/**
 	 * Modifies the current task status.
 	 * 
 	 * @param status The new status.
@@ -209,6 +224,7 @@ public abstract class Task<T> {
 			return false;
 		}
 		this.status = status;
+		System.out.println("[" + getState().getName() + "] " + getName() + ": " + status);
 		return true;
 	}
 	
@@ -228,7 +244,7 @@ public abstract class Task<T> {
 	 * 
 	 * @return The task.
 	 */
-	public Task<T> setRepeatDelay(int repeatDelay) {
+	public Task setRepeatDelay(int repeatDelay) {
 		this.repeatDelay = repeatDelay;
 		return this;
 	}
@@ -243,22 +259,13 @@ public abstract class Task<T> {
 	}
 	
 	/**
-	 * Retrieves the response.
-	 * 
-	 * @return The response.
-	 */
-	public CallbackResponse<T> getResponse() {
-		return response;
-	}
-	
-	/**
 	 * Retrieves whether a given task property is assigned to the task or not.
 	 * 
 	 * @param prop The task property.
 	 * 
 	 * @return The result.
 	 */
-	protected boolean hasProperty(TaskProperty prop) {
+	public boolean hasProperty(TaskProperty prop) {
 		if (Objects.isNull(getProperties()) || getProperties().length <= 0) {
 			return false;
 		}

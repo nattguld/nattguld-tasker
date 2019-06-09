@@ -10,5 +10,6 @@ public enum TaskProperty {
 	
 	REPEAT,
 	IGNORE_CRITICAL,
+	DAEMON;
 
 }

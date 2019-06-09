@@ -23,6 +23,11 @@ public abstract class Step {
 	 */
 	private StepState state;
 	
+	/**
+	 * The current step status.
+	 */
+	private String status;
+	
 	
 	/**
 	 * Creates a new step.
@@ -60,6 +65,7 @@ public abstract class Step {
 		this.name = name;
 		this.critical = critical;
 		this.state = StepState.IN_QUEUE;
+		this.status = "Idle";
 	}
 	
 	/**
@@ -106,6 +112,27 @@ public abstract class Step {
 	 */
 	public StepState getState() {
 		return state;
+	}
+	
+	/**
+	 * Modifies the status.
+	 * 
+	 * @param status The new status.
+	 */
+	protected void setStatus(String status) {
+		if (getStatus().equals(status)) {
+			return;
+		}
+		this.status = status;
+	}
+	
+	/**
+	 * Retrieves the current step status.
+	 * 
+	 * @return The status.
+	 */
+	public String getStatus() {
+		return getName() + ": " + status;
 	}
 
 }
