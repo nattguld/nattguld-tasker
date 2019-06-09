@@ -22,12 +22,12 @@ TaskState responseState = TaskManager.sync(new SimpleExample()); //Synchronous
 ```java
 public CallbackExample extends Task implements ICallback<T> {
   
-  private final CallbackResponse<T> callback;
+  private final CallbackResponse<T> callbackResponse;
   
   
   public CallbackExample() {
     super("Callback example");
-    this.callback = new CallbackResponse<T>(fallback);
+    this.callbackResponse = new CallbackResponse<T>(fallback);
   }
   
   @Override
@@ -38,7 +38,7 @@ public CallbackExample extends Task implements ICallback<T> {
   
   @Override
   public CallbackResponse<T> getCallbackResponse() {
-    return callback;
+    return callbackResponse;
   }
 }
 //Asynchronous
@@ -99,6 +99,11 @@ public StepTaskExample extends StepTask implements ICallback<T> {
         return myValue;
       }
     }
+  }
+  
+  @Override
+  public CallbackResponse<T> getCallbackResponse() {
+    return callbackResponse;
   }
 }
 ```
