@@ -1,4 +1,4 @@
-# nattguld-tasker
+# Nattguld Tasker
 
 ## Simple example task
 ```java
