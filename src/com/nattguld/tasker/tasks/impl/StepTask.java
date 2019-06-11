@@ -37,6 +37,22 @@ public abstract class StepTask extends Task {
 
 	
 	/**
+	 * Creates a new step task.
+	 */
+	public StepTask() {
+		super();
+	}
+	
+	/**
+	 * Creates a new step task.
+	 * 
+	 * @param name The name of the task.
+	 */
+	public StepTask(String name) {
+		super(name);
+	}
+	
+	/**
 	 * Builds the step flow.
 	 * 
 	 * @param steps The steps.
