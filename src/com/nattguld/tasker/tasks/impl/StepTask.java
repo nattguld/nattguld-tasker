@@ -169,5 +169,16 @@ public abstract class StepTask extends Task {
 	protected int getStepDelay() {
 		return 100;
 	}
+	
+	/**
+	 * Retrieves the task's steps.
+	 * 
+	 * @return The steps.
+	 */
+	public List<Step> getSteps() {
+		synchronized (steps) {
+			return steps;
+		}
+	}
 
 }
