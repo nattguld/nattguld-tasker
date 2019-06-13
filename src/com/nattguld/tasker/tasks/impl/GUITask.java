@@ -1,6 +1,7 @@
 package com.nattguld.tasker.tasks.impl;
 
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.swing.SwingUtilities;
 
@@ -36,20 +37,20 @@ public abstract class GUITask extends Task {
 	/**
 	 * Attempts to update the GUI.
 	 * 
-	 * @return Whether updating was successfull or not.
+	 * @return The response state.
 	 */
-	protected abstract boolean updateGUI();
+	protected abstract TaskState updateGUI();
 	
 	@Override
 	protected TaskState executeTask() throws Exception {
 		AtomicBoolean updated = new AtomicBoolean();
-		AtomicBoolean success = new AtomicBoolean();
+		AtomicReference<TaskState> taskResp = new AtomicReference<TaskState>(TaskState.CANCEL);
 		
 		SwingUtilities.invokeLater(new Runnable() {
 			@Override
 			public void run() {
 				try {
-					success.set(updateGUI());
+					taskResp.set(updateGUI());
 					
 				} catch (Exception ex) {
 					ex.printStackTrace();
@@ -64,12 +65,12 @@ public abstract class GUITask extends Task {
 			elapsed += 50;
 			
 			if (elapsed >= getTimeoutMs()) {
-				success.set(false);
+				taskResp.set(TaskState.CANCEL);
 				updated.set(true);
 				break;
 			}
 		}
-		return success.get() ? TaskState.FINISHED : TaskState.ERROR;
+		return taskResp.get();
 	}
 	
 	/**
