@@ -53,18 +53,31 @@ public abstract class StepTask extends Task {
 	}
 	
 	/**
-	 * Builds the step flow.
+	 * Adds a step in the first position.
 	 * 
-	 * @param steps The steps.
+	 * @param step The step.
 	 */
-	protected abstract void buildStepFlow(List<Step> steps);
+	protected void addFirst(Step step) {
+		steps.add(0, step);
+	}
+	
+	/**
+	 * Adds a step.
+	 * 
+	 * @param step The step to add.
+	 */
+	protected void add(Step step) {
+		steps.add(step);
+	}
+	
+	/**
+	 * Builds the step flow.
+	 */
+	protected abstract void buildStepFlow();
 	
 	@Override
 	protected TaskState executeTask() throws Exception {
-		steps.clear();
-		stepDeque.clear();
-		
-		buildStepFlow(steps);
+		buildStepFlow();
 		
 		if (steps.isEmpty()) {
 			System.err.println("Empty step flow");
@@ -109,6 +122,14 @@ public abstract class StepTask extends Task {
 			Misc.sleep(getStepDelay());
 		}
 		return TaskState.FINISHED;
+	}
+	
+	@Override
+	public void reset() {
+		super.reset();
+		
+		steps.clear();
+		stepDeque.clear();
 	}
 	
 	/**
