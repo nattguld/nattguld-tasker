@@ -2,6 +2,7 @@ package com.nattguld.tasker.tasks;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.jar.Attributes;
 
 import com.nattguld.tasker.util.Misc;
 
@@ -22,6 +23,11 @@ public abstract class Task implements Runnable {
 	 * The task properties.
 	 */
 	private final List<TaskProperty> props;
+	
+	/**
+	 * The task attributes.
+	 */
+	private final Attributes attributes;
 	
 	/**
 	 * The name of the task.
@@ -66,6 +72,7 @@ public abstract class Task implements Runnable {
 		this.state = TaskState.IN_QUEUE;
 		this.status = "In queue";
 		this.repeatDelay = DEFAULT_REPEAT_DELAY;
+		this.attributes = new Attributes();
 		this.props = new ArrayList<>();
 	}
 	
@@ -330,6 +337,15 @@ public abstract class Task implements Runnable {
 			return this;
 		}
 		return this;
+	}
+	
+	/**
+	 * Retrieves the attributes.
+	 * 
+	 * @return The attributes.
+	 */
+	protected Attributes getAttributes() {
+		return attributes;
 	}
 	
 	/**
