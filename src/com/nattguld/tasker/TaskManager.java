@@ -51,16 +51,9 @@ public class TaskManager {
      * The executor service for threading.
      */
     private static ExecutorService executorService = Executors.newCachedThreadPool();
-
-    /**
-     * The task configurations.
-     */
-    private static TaskConfig taskConfig;
 	
     
     static {
-    	taskConfig = new TaskConfig();
-    	
     	processPending();
     	processActive();
     }
@@ -79,7 +72,7 @@ public class TaskManager {
 							continue;
 						}
 						for (Task task : pending) {
-							if (active.size() >= getTaskConfig().getMaxParallel()) {
+							if (active.size() >= TaskConfig.getConfig().getMaxParallel()) {
 								continue;
 							}
 							async(task);
@@ -176,7 +169,7 @@ public class TaskManager {
 			System.err.println("Received nulled task");
     		return;
     	}
-		if (active.size() >= getTaskConfig().getMaxParallel()) {
+		if (active.size() >= TaskConfig.getConfig().getMaxParallel()) {
 			pending.add(task);
 			return;
 		}
@@ -273,24 +266,6 @@ public class TaskManager {
 		return getAllTasks().stream()
 				.filter(t -> t.getClass().isInstance(c))
 				.collect(Collectors.toList());
-	}
-	
-	/**
-	 * Modifies the task configurations.
-	 * 
-	 * @param loadedConfig The loaded configurations.
-	 */
-	public static void setTaskConfig(TaskConfig loadedConfig) {
-		taskConfig = loadedConfig;
-	}
-	
-	/**
-	 * Retrieves the task configurations.
-	 * 
-	 * @return The task configurations.
-	 */
-	public static TaskConfig getTaskConfig() {
-		return taskConfig;
 	}
 	
 	/**

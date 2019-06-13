@@ -1,12 +1,17 @@
 package com.nattguld.tasker.cfg;
 
+import com.nattguld.data.cfg.Config;
+import com.nattguld.data.cfg.ConfigManager;
+import com.nattguld.data.json.JsonReader;
+import com.nattguld.data.json.JsonWriter;
+
 /**
  * 
  * @author randqm
  *
  */
 
-public class TaskConfig {
+public class TaskConfig extends Config {
 	
 	/**
 	 * Whether to remove failed tasks or not.
@@ -18,14 +23,34 @@ public class TaskConfig {
 	 */
 	private int maxParallel = 40 * Runtime.getRuntime().availableProcessors();
 
+
+	@Override
+	protected void read(JsonReader reader) {
+		this.removeFailed = reader.getAsBoolean("remove_failed", true);
+		this.maxParallel = reader.getAsInt("max_parallel", 40 * Runtime.getRuntime().availableProcessors());
+	}
+
+	@Override
+	protected void write(JsonWriter writer) {
+		writer.write("remove_failed", removeFailed);
+		writer.write("max_parallel", maxParallel);
+	}
+	
+	@Override
+	protected String getSaveFileName() {
+		return ".task_config";
+	}
 	
 	/**
 	 * Modifies whether to remove failed tasks or not.
 	 * 
 	 * @param removeFailed The new state.
+	 * 
+	 * @return The config.
 	 */
-	public void setRemoveFailed(boolean removeFailed) {
+	public TaskConfig setRemoveFailed(boolean removeFailed) {
 		this.removeFailed = removeFailed;
+		return this;
 	}
 	
 	/**
@@ -41,9 +66,12 @@ public class TaskConfig {
 	 * Modifies the maximum amount of parallel tasks allowed.
 	 * 
 	 * @param maxParallel The new amount.
+	 * 
+	 * @return The config.
 	 */
-	public void setMaxParallel(int maxParallel) {
+	public TaskConfig setMaxParallel(int maxParallel) {
 		this.maxParallel = maxParallel;
+		return this;
 	}
 	
 	/**
@@ -53,6 +81,15 @@ public class TaskConfig {
 	 */
 	public int getMaxParallel() {
 		return maxParallel;
+	}
+	
+	/**
+	 * Retrieves the config.
+	 * 
+	 * @return The config.
+	 */
+	public static TaskConfig getConfig() {
+		return (TaskConfig)ConfigManager.getConfig(new TaskConfig());
 	}
 
 }
