@@ -1,6 +1,7 @@
 package com.nattguld.tasker.tasks;
 
-import java.util.Objects;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.nattguld.tasker.util.Misc;
 
@@ -16,6 +17,11 @@ public abstract class Task implements Runnable {
 	 * The default task repeat delay in milliseconds.
 	 */
 	public static final int DEFAULT_REPEAT_DELAY = 1000;
+	
+	/**
+	 * The task properties.
+	 */
+	private final List<TaskProperty> props;
 	
 	/**
 	 * The name of the task.
@@ -60,6 +66,7 @@ public abstract class Task implements Runnable {
 		this.state = TaskState.IN_QUEUE;
 		this.status = "In queue";
 		this.repeatDelay = DEFAULT_REPEAT_DELAY;
+		this.props = new ArrayList<>();
 	}
 	
 	/**
@@ -294,31 +301,35 @@ public abstract class Task implements Runnable {
 	}
 	
 	/**
-	 * Retrieves whether a given task property is assigned to the task or not.
+	 * Retrieves whether the task has a given property or not.
 	 * 
-	 * @param prop The task property.
+	 * @param prop The property.
 	 * 
 	 * @return The result.
 	 */
 	public boolean hasProperty(TaskProperty prop) {
-		if (Objects.isNull(getProperties()) || getProperties().length <= 0) {
-			return false;
-		}
-		for (TaskProperty tp : getProperties()) {
-			if (tp == prop) {
-				return true;
-			}
-		}
-		return false;
+		return props.contains(prop);
 	}
 	
 	/**
-	 * Retrieves the custom task properties.
+	 * Sets a task property.
 	 * 
-	 * @return The custom task properties if any.
+	 * @param prop The property.
+	 * 
+	 * @param enabled Whether to enabled the property or not.
+	 * 
+	 * @return The task.
 	 */
-	protected TaskProperty[] getProperties() {
-		return null;
+	public Task setProperty(TaskProperty prop, boolean enabled) {
+		if (!enabled && hasProperty(prop)) {
+			props.remove(prop);
+			return this;
+		}
+		if (enabled && !hasProperty(prop)) {
+			props.add(prop);
+			return this;
+		}
+		return this;
 	}
 	
 	/**
