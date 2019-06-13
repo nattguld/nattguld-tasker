@@ -1,5 +1,8 @@
 # Nattguld Tasker
 
+## Dependencies
+This library does not really need any dependencies but by default nattguld-data (https://github.com/nattguld/nattguld-data) is built in to allow us to save configurations. This can easily be stripped out if you wish.
+
 ## About
 Easy to use library usesful for any multi threaded applications.
 Run asynchonous, synchronous and callback tasks anywhere in your application.
