@@ -62,11 +62,46 @@ public abstract class Task implements Runnable {
 		this.repeatDelay = DEFAULT_REPEAT_DELAY;
 	}
 	
+	/**
+	 * Whether the conditions for executing the task flow are met or not.
+	 * 
+	 * @return The result.
+	 */
+	protected boolean preConditionsMet() {
+		//TODO override when required
+		return true;
+	}
+	
+	/**
+	 * Executes when the flow is starting.
+	 */
+	protected void onStart() {
+		reset();
+	}
+	
 	@Override
 	public void run() {
-		while (!handleTask()) {
-			Misc.sleep(getRepeatDelay());
+		if (!preConditionsMet()) {
+			setState(TaskState.ERROR);
+			return;
 		}
+		onStart();
+		
+		try {
+			while (!handleTask()) {
+				Misc.sleep(getRepeatDelay());
+			}
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+		onFinish();
+	}
+	
+	/**
+	 * Executes when the flow is finished.
+	 */
+	protected void onFinish() {
+		//TODO override when required
 	}
 	
 	/**

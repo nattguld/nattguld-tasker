@@ -85,6 +85,7 @@ public abstract class StepTask extends Task {
 				}
 			} catch (Exception ex) {
 				ex.printStackTrace();
+				onException(currentStep, ex);
 				currentStep.setState(StepState.EXCEPTION);
 			}
 			if (currentStep.getState() == StepState.CANCEL) {
@@ -97,6 +98,7 @@ public abstract class StepTask extends Task {
 			}
 			if (currentStep.getState() == StepState.EXCEPTION || currentStep.getState() == StepState.FAILED) {
 				setStatus(currentStep.getName() + ": Failed to execute");
+				onStepFail(currentStep);
 				
 				if (currentStep.isCritical()) {
 					return currentStep.getState() == StepState.EXCEPTION ? TaskState.EXCEPTION : TaskState.ERROR;
@@ -107,6 +109,26 @@ public abstract class StepTask extends Task {
 			Misc.sleep(getStepDelay());
 		}
 		return TaskState.FINISHED;
+	}
+	
+	/**
+	 * Executed when a step fails.
+	 * 
+	 * @param step The step.
+	 */
+	protected void onStepFail(Step step) {
+		System.err.println("Failed to execute flow step (" + step.getState() + ") " + step.getName() + ": " + step.getStatus());
+	}
+	
+	/**
+	 * Executed when the flow encounters an exception.
+	 * 
+	 * @param step The flow step.
+	 * 
+	 * @param ex The exception.
+	 */
+	protected void onException(Step step, Exception ex) {
+		System.err.println("Failed to execue flow step " + step.getName() + " due an exception");
 	}
 	
 	/**
