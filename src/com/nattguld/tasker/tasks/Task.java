@@ -2,6 +2,7 @@ package com.nattguld.tasker.tasks;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import com.nattguld.tasker.util.Attributes;
 import com.nattguld.tasker.util.Misc;
@@ -283,7 +284,7 @@ public abstract class Task implements Runnable {
 	 * @return The status.
 	 */
 	public String getStatus() {
-		return status;
+		return Objects.isNull(status) ? "" : status;
 	}
 	
 	/**
