@@ -144,7 +144,7 @@ public abstract class Task implements Runnable {
 		}
 		attempts++;
 		setState(TaskState.RUNNING);
-		setStatus("Running task " + getName());
+		setStatus("Running");
 		TaskState respState = TaskState.RUNNING;
 		
 		try {
@@ -154,7 +154,7 @@ public abstract class Task implements Runnable {
 			ex.printStackTrace();
 			respState = TaskState.EXCEPTION;
 		}
-		setStatus("Ran task " + getName() + " with response => " + respState.getName());
+		setStatus("Finished with response: " + respState.getName());
 		
 		if (!hasProperty(TaskProperty.REPEAT)) {
 			if (getState() != TaskState.CANCEL) {
@@ -280,7 +280,7 @@ public abstract class Task implements Runnable {
 		this.status = status;
 		
 		if (!hasProperty(TaskProperty.DAEMON) || TaskConfig.getConfig().isDebug()) {
-			System.out.println("[" + getState().getName() + "] " + getName() + ": " + status);
+			System.out.println("[" + getName() + "][" + getState().getName() + "]: " + status);
 		}
 		return true;
 	}

@@ -87,7 +87,7 @@ public abstract class StepTask extends Task {
 		buildStepFlow();
 		
 		if (steps.isEmpty()) {
-			System.err.println("Empty step flow");
+			System.err.println("[" + getName() + "]: Empty step flow");
 			return TaskState.ERROR;
 		}
 		stepDeque.addAll(steps);
@@ -144,7 +144,7 @@ public abstract class StepTask extends Task {
 	 * @param step The step.
 	 */
 	protected void onStepFail(Step step) {
-		System.err.println("Failed to execute flow step (" + step.getState() + ") " + step.getName() + ": " + step.getStatus());
+		System.err.println("[" + getName() + "] Failed [" + step.getState() + "] to execute flow step " + step.getName() + ": " + step.getStatus());
 	}
 	
 	/**
@@ -155,7 +155,7 @@ public abstract class StepTask extends Task {
 	 * @param ex The exception.
 	 */
 	protected void onException(Step step, Exception ex) {
-		System.err.println("Failed to execue flow step " + step.getName() + " due an exception");
+		System.err.println("[" + getName() + "] Failed [" + step.getState() + "] to execute flow step " + step.getName() + " due an exception.");
 	}
 	
 	/**
