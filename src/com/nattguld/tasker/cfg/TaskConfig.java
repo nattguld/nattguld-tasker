@@ -14,6 +14,11 @@ import com.nattguld.data.json.JsonWriter;
 public class TaskConfig extends Config {
 	
 	/**
+	 * Whether to debug or not.
+	 */
+	private boolean debug;
+	
+	/**
 	 * Whether to remove failed tasks or not.
 	 */
 	private boolean removeFailed = true;
@@ -26,12 +31,14 @@ public class TaskConfig extends Config {
 
 	@Override
 	protected void read(JsonReader reader) {
+		this.debug = reader.getAsBoolean("debug", false);
 		this.removeFailed = reader.getAsBoolean("remove_failed", true);
 		this.maxParallel = reader.getAsInt("max_parallel", 40 * Runtime.getRuntime().availableProcessors());
 	}
 
 	@Override
 	protected void write(JsonWriter writer) {
+		writer.write("debug", debug);
 		writer.write("remove_failed", removeFailed);
 		writer.write("max_parallel", maxParallel);
 	}
@@ -39,6 +46,27 @@ public class TaskConfig extends Config {
 	@Override
 	protected String getSaveFileName() {
 		return ".task_config";
+	}
+	
+	/**
+	 * Modifies whether to debug or not.
+	 * 
+	 * @param debug The new state.
+	 * 
+	 * @return The config.
+	 */
+	public TaskConfig setDebug(boolean debug) {
+		this.debug = debug;
+		return this;
+	}
+	
+	/**
+	 * Retrieves whether to debug or not.
+	 * 
+	 * @return The result.
+	 */
+	public boolean isDebug() {
+		return debug;
 	}
 	
 	/**

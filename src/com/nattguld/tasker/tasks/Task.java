@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import com.nattguld.tasker.cfg.TaskConfig;
 import com.nattguld.tasker.util.Attributes;
 import com.nattguld.tasker.util.Misc;
 
@@ -143,6 +144,7 @@ public abstract class Task implements Runnable {
 		}
 		attempts++;
 		setState(TaskState.RUNNING);
+		setStatus("Running task " + getName());
 		TaskState respState = TaskState.RUNNING;
 		
 		try {
@@ -152,6 +154,8 @@ public abstract class Task implements Runnable {
 			ex.printStackTrace();
 			respState = TaskState.EXCEPTION;
 		}
+		setStatus("Ran task " + getName() + " with response => " + respState.getName());
+		
 		if (!hasProperty(TaskProperty.REPEAT)) {
 			if (getState() != TaskState.CANCEL) {
 				setState(respState);
@@ -274,7 +278,10 @@ public abstract class Task implements Runnable {
 			return false;
 		}
 		this.status = status;
-		System.out.println("[" + getState().getName() + "] " + getName() + ": " + status);
+		
+		if (!hasProperty(TaskProperty.DAEMON) || TaskConfig.getConfig().isDebug()) {
+			System.out.println("[" + getState().getName() + "] " + getName() + ": " + status);
+		}
 		return true;
 	}
 	
@@ -356,6 +363,11 @@ public abstract class Task implements Runnable {
 	 */
 	protected int getMaxAttempts() {
 		return 1;
+	}
+	
+	@Override
+	public String toString() {
+		return getName();
 	}
 
 }

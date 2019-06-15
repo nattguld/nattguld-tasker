@@ -134,5 +134,10 @@ public abstract class Step {
 	public String getStatus() {
 		return getName() + ": " + status;
 	}
+	
+	@Override
+	public String toString() {
+		return getName();
+	}
 
 }

@@ -123,11 +123,11 @@ public abstract class StepTask extends Task {
 				if (currentStep.isCritical()) {
 					return currentStep.getState() == StepState.EXCEPTION ? TaskState.EXCEPTION : TaskState.ERROR;
 				}
-			} else {
-				setStatus(currentStep.getName() + ": Executed successfully");
 			}
+			setStatus(currentStep.getName() + ": Executed successfully");
 			Misc.sleep(getStepDelay());
 		}
+		setStatus("Successfully executed step task " + getName());
 		return TaskState.FINISHED;
 	}
 	
