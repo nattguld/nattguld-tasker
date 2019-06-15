@@ -70,6 +70,13 @@ public abstract class StepTask extends Task {
 		steps.add(step);
 	}
 	
+	@Override
+	protected void onStart() {
+		steps.clear();
+		
+		super.onStart();
+	}
+	
 	/**
 	 * Builds the step flow.
 	 */
@@ -128,7 +135,6 @@ public abstract class StepTask extends Task {
 	public void reset() {
 		super.reset();
 		
-		steps.clear();
 		stepDeque.clear();
 	}
 	
