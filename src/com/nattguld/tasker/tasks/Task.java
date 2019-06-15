@@ -154,7 +154,7 @@ public abstract class Task implements Runnable {
 			ex.printStackTrace();
 			respState = TaskState.EXCEPTION;
 		}
-		setStatus("Finished with response: " + respState.getName());
+		setStatus("Finished with response [" + respState.getName() + ": " + getStatus() + "]");
 		
 		if (!hasProperty(TaskProperty.REPEAT)) {
 			if (getState() != TaskState.CANCEL) {
