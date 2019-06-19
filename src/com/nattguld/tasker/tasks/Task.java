@@ -156,10 +156,10 @@ public abstract class Task implements Runnable {
 		}
 		setStatus("Finished with response [" + respState.getName() + ": " + getStatus() + "]");
 		
+		if (respState != TaskState.CANCEL) {
+			setState(respState);
+		}
 		if (!hasProperty(TaskProperty.REPEAT)) {
-			if (getState() != TaskState.CANCEL) {
-				setState(respState);
-			}
 			if (respState == TaskState.RUNNING) {
 				setStatus("Fatal Error, task state is still running after task execution");
 				setState(TaskState.EXCEPTION);
@@ -178,7 +178,7 @@ public abstract class Task implements Runnable {
 				return true;
 			}
 		}
-		return !hasProperty(TaskProperty.REPEAT);
+		return respState == TaskState.CANCEL;
 	}
 	
 	/**

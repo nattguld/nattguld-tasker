@@ -158,13 +158,9 @@ public abstract class StepTask extends Task {
 		System.err.println("[" + getName() + "] Failed [" + step.getState() + "] to execute flow step " + step.getName() + " due an exception.");
 	}
 	
-	/**
-	 * Retrieves the status of the current step.
-	 * 
-	 * @return The status.
-	 */
-	public String getCurrentStepStatus() {
-		return Objects.isNull(currentStep) ? "Waiting..." : currentStep.getStatus();
+	@Override
+	public String getStatus() {
+		return Objects.isNull(currentStep) ? super.getStatus() : currentStep.getStatus();
 	}
 	
 	/**
