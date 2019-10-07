@@ -93,6 +93,10 @@ public abstract class StepTask extends Task {
 		stepDeque.addAll(steps);
 		
 		while (!stepDeque.isEmpty()) {
+			if (getState() == TaskState.CANCEL) {
+				setStatus("Task has been cancelled");
+				return TaskState.CANCEL;
+			}
 			currentStep = stepDeque.poll();
 			
 			setStatus(currentStep.getName() + ": Executing");
@@ -115,6 +119,10 @@ public abstract class StepTask extends Task {
 			if (currentStep.getState() == StepState.INTERRUPT) {
 				setStatus(currentStep.getName() + ": Interrupted Flow");
 				break;
+			}
+			if (currentStep.getState() == StepState.RETRY) {
+				setStatus(currentStep.getName() + ": Interrupted Flow for Retry");
+				return TaskState.RETRY;
 			}
 			if (currentStep.getState() == StepState.EXCEPTION || currentStep.getState() == StepState.FAILED) {
 				setStatus(currentStep.getName() + ": Failed to execute");

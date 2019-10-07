@@ -5,6 +5,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import javax.swing.SwingUtilities;
 
+import com.nattguld.tasker.TaskPolicy;
 import com.nattguld.tasker.tasks.Task;
 import com.nattguld.tasker.tasks.TaskState;
 import com.nattguld.tasker.util.Misc;
@@ -80,6 +81,11 @@ public abstract class GUITask extends Task {
 	 */
 	protected int getTimeoutMs() {
 		return 10 * 1000;
+	}
+	
+	@Override
+	public TaskPolicy getPolicy() {
+		return TaskPolicy.FORCE;
 	}
  
 }

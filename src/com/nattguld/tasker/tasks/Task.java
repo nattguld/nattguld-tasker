@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import com.nattguld.tasker.TaskPolicy;
 import com.nattguld.tasker.cfg.TaskConfig;
 import com.nattguld.tasker.util.Attributes;
 import com.nattguld.tasker.util.Misc;
@@ -61,7 +62,7 @@ public abstract class Task implements Runnable {
 	 * Creates a new task.
 	 */
 	public Task() {
-		this("unnamed");
+		this(null);
 	}
 	
 	/**
@@ -70,7 +71,7 @@ public abstract class Task implements Runnable {
 	 * @param name The name of the task.
 	 */
 	public Task(String name) {
-		this.name = name;
+		this.name = Objects.isNull(name) ? getClass().getName() : name;
 		this.state = TaskState.IN_QUEUE;
 		this.status = "In queue";
 		this.repeatDelay = DEFAULT_REPEAT_DELAY;
@@ -148,6 +149,8 @@ public abstract class Task implements Runnable {
 		TaskState respState = TaskState.RUNNING;
 		
 		try {
+			setStatus("Executing " + getName());
+			
 			respState = executeTask();
 
 		} catch (Exception ex) {
@@ -156,15 +159,24 @@ public abstract class Task implements Runnable {
 		}
 		setStatus("Finished with response [" + respState.getName() + ": " + getStatus() + "]");
 		
-		if (respState != TaskState.CANCEL) {
-			setState(respState);
+		if (respState == TaskState.CANCEL || getState() == TaskState.CANCEL) {
+			setState(TaskState.FINISHED);
+			return true;
+		}
+		if (respState == TaskState.RETRY) {
+			setState(TaskState.IN_QUEUE);
+			reset();
+			onStart();
+			return false;
 		}
 		if (!hasProperty(TaskProperty.REPEAT)) {
 			if (respState == TaskState.RUNNING) {
 				setStatus("Fatal Error, task state is still running after task execution");
 				setState(TaskState.EXCEPTION);
-				return false;
+				return true;
 			}
+			setState(respState);
+			
 			if (respState == TaskState.FINISHED) {
 				return true;
 			}
@@ -175,10 +187,14 @@ public abstract class Task implements Runnable {
 				return false;
 			}
 			if (!hasProperty(TaskProperty.IGNORE_CRITICAL)) {
+				setState(respState);
 				return true;
 			}
+			setState(TaskState.IN_QUEUE);
+			return false;
 		}
-		return respState == TaskState.CANCEL;
+		setState(TaskState.IN_QUEUE);
+		return false;
 	}
 	
 	/**
@@ -363,6 +379,15 @@ public abstract class Task implements Runnable {
 	 */
 	protected int getMaxAttempts() {
 		return 1;
+	}
+	
+	/**
+	 * Retrieves the task policy.
+	 * 
+	 * @return The task policy.
+	 */
+	public TaskPolicy getPolicy() {
+		return TaskPolicy.DEFAULT;
 	}
 	
 	@Override

@@ -4,6 +4,7 @@ import com.nattguld.data.cfg.Config;
 import com.nattguld.data.cfg.ConfigManager;
 import com.nattguld.data.json.JsonReader;
 import com.nattguld.data.json.JsonWriter;
+import com.nattguld.tasker.TaskManager;
 
 /**
  * 
@@ -26,7 +27,7 @@ public class TaskConfig extends Config {
 	/**
 	 * The maximum amount of parallel tasks allowed.
 	 */
-	private int maxParallel = 40 * Runtime.getRuntime().availableProcessors();
+	private int maxParallel = 25 * Runtime.getRuntime().availableProcessors();
 
 
 	@Override
@@ -99,6 +100,7 @@ public class TaskConfig extends Config {
 	 */
 	public TaskConfig setMaxParallel(int maxParallel) {
 		this.maxParallel = maxParallel;
+		TaskManager.updateMaxParallel(maxParallel);
 		return this;
 	}
 	

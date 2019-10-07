@@ -1,4 +1,4 @@
-package com.nattguld.tasker.tasks;
+package com.nattguld.tasker;
 
 /**
  * 
@@ -6,16 +6,12 @@ package com.nattguld.tasker.tasks;
  *
  */
 
-public enum TaskState {
+public enum TaskPolicy {
 	
-	IN_QUEUE("In Queue"),
-	RUNNING("Running"),
-	PAUSED("Paused"),
-	ERROR("Error"),
-	CANCEL("Cancelling"),
-	FINISHED("Finished"),
-	EXCEPTION("Exception"),
-	RETRY("Retry");
+	FORCE("Force"),
+	DEFAULT("Default"),
+	OPTIONAL("Optional"),
+	SINGLE("Single by class");
 	
 	
 	/**
@@ -25,11 +21,11 @@ public enum TaskState {
 	
 	
 	/**
-	 * Creates a new task state.
+	 * Creates a new task policy.
 	 * 
 	 * @param name The name.
 	 */
-	private TaskState(String name) {
+	private TaskPolicy(String name) {
 		this.name = name;
 	}
 	

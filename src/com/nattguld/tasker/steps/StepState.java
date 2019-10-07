@@ -14,6 +14,8 @@ public enum StepState {
 	SUCCESS,
 	EXCEPTION,
 	INTERRUPT,
-	CANCEL;
+	CANCEL,
+	RETRY,
+	TIMED_OUT;
 
 }

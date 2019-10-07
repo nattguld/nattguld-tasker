@@ -1,5 +1,10 @@
 package com.nattguld.tasker.steps;
 
+import com.nattguld.tasker.TaskManager;
+import com.nattguld.tasker.tasks.Task;
+import com.nattguld.tasker.tasks.TaskState;
+import com.nattguld.tasker.util.Misc;
+
 /**
  * 
  * @author randqm
@@ -74,6 +79,24 @@ public abstract class Step {
 	 * @return The step execution response.
 	 */
 	public abstract StepState execute();
+	
+	
+	/**
+	 * Runs an external task within the step.
+	 * 
+	 * @param external The external task.
+	 * 
+	 * @return The finish task state.
+	 */
+	protected TaskState runExternalTask(Task external) {
+		TaskManager.executeForcefully(external);
+		
+		while (external.isActive()) {
+			setStatus(external.getStatus());
+			Misc.sleep(200);
+		}
+		return external.getState();
+	}
 	
 	/**
 	 * Retrieves the step name.

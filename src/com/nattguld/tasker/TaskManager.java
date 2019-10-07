@@ -1,6 +1,5 @@
 package com.nattguld.tasker;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -10,6 +9,10 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionHandler;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import com.nattguld.tasker.callbacks.ICallback;
@@ -33,9 +36,9 @@ public class TaskManager {
 	private static final int PENDING_UPDATE_DELAY = 10000;
 	
 	/**
-	 * Holds tasks pending to become active.
+	 * Holds tasks delayed tasks before becoming active.
 	 */
-	private static List<Task> pending = new CopyOnWriteArrayList<>();
+	private static List<Task> delayed = new CopyOnWriteArrayList<>();
 	
 	/**
 	 * Holds the currently active tasks.
@@ -50,63 +53,91 @@ public class TaskManager {
     /**
      * The executor service for threading.
      */
-    private static ExecutorService executorService = Executors.newCachedThreadPool();
-	
+    private static ThreadPoolExecutor executorService;
+    
+    /**
+     * The executor service for threading.
+     */
+    private static ExecutorService alternateExecutorService = Executors.newCachedThreadPool();
+    
     
     static {
-    	processPending();
-    	processActive();
-    }
-    
-    /**
-     * Processes the pending tasks.
-     */
-    private static void processPending() {
-    	executorService.submit(new Runnable() {
+    	RejectedExecutionHandler rejectedExecutionHandler = new RejectedExecutionHandler() {
 			@Override
-			public void run() {
-				while (true) {
-					try {
-						if (pending.isEmpty()) {
-							Misc.sleep(PENDING_UPDATE_DELAY);
-							continue;
-						}
-						for (Task task : pending) {
-							if (active.size() >= TaskConfig.getConfig().getMaxParallel()) {
-								continue;
-							}
-							async(task);
-							pending.remove(task);
-						}
-					} catch (Exception ex) {
-						ex.printStackTrace();
-					}
+			public void rejectedExecution(Runnable runnable, ThreadPoolExecutor threadPoolExecutor) {
+				Task task = (Task)runnable;
+				
+				if (task.getPolicy() == TaskPolicy.OPTIONAL) {
+					System.err.println(task.getName() + " has been rejected and ignored [Policy: " + task.getPolicy().getName() + "]");
+					return;
 				}
+				try {
+		            Future<?> sf = executorService.submit(task);
+		            active.put(task, sf);
+		            
+		            System.err.println(task.getName() + " has been rejected but re-executed through alternate executor [Policy: " + task.getPolicy().getName() + "]");
+		            
+		        } catch(Exception e) {
+		        	System.err.println(task.getName() + " has been rejected and failed to re-execute [Policy: " + task.getPolicy().getName() + "]");
+		        }
 			}
-    	});
+    	};
+    	/*executorService = new ThreadPoolExecutor(TaskConfig.getConfig().getMaxParallel(), TaskConfig.getConfig().getMaxParallel(), 60L, TimeUnit.SECONDS
+    			, new SynchronousQueue<Runnable>(), rejectedExecutionHandler);*/
+    	executorService = new ThreadPoolExecutor(TaskConfig.getConfig().getMaxParallel(), TaskConfig.getConfig().getMaxParallel(), 60L, TimeUnit.SECONDS
+    			, new LinkedBlockingQueue<Runnable>(), rejectedExecutionHandler);
+    	/*executorService = new ThreadPoolExecutor(TaskConfig.getConfig().getMaxParallel(), TaskConfig.getConfig().getMaxParallel(), 0L, TimeUnit.MILLISECONDS
+    			, new LinkedBlockingQueue<Runnable>(), rejectedExecutionHandler);*/
+    	executorService.allowCoreThreadTimeOut(true);
+    	
+    	processTasks();
     }
     
     /**
-     * Processes the active tasks.
+     * Updates the max parallel threads count.
+     * 
+     * @param maxParallel The new count.
      */
-    private static void processActive() {
-    	executorService.submit(new Runnable() {
+	public static void updateMaxParallel(int maxParallel) {
+		executorService.setMaximumPoolSize(maxParallel);
+	}
+	
+    /**
+     * Processes the tasks.
+     */
+    private static void processTasks() {
+    	executorService.execute(new Runnable() {
 			@Override
 			public void run() {
 				while (true) {
 					try {
-						if (active.isEmpty()) {
+						if (active.isEmpty() && delayed.isEmpty()) {
 							Misc.sleep(PENDING_UPDATE_DELAY);
 							continue;
 						}
 						for (Task task : active.keySet()) {
-							if (!task.isActive()) {
-								remove(task);
+							if (task.isActive()) {
+								continue;
+							}
+							remove(task);
+						}
+						if (executorService.getQueue().size() < executorService.getMaximumPoolSize()) {
+							for (Task delayedTask : delayed) {
+								if (delayedTask.getPolicy() == TaskPolicy.SINGLE 
+										&& !taskByClassIsActive(delayedTask.getClass().getSimpleName()).isEmpty()) {
+									continue;
+								}
+								async(delayedTask);
+								
+								if (executorService.getQueue().size() >= executorService.getMaximumPoolSize()) {
+									break;
+								}
 							}
 						}
 					} catch (Exception ex) {
 						ex.printStackTrace();
 					}
+					Misc.sleep(100);
 				}
 			}
     	});
@@ -121,8 +152,8 @@ public class TaskManager {
 		if (active.containsKey(task)) {
 			stop(task);
 		}
-		if (pending.contains(task)) {
-			pending.remove(task);
+		if (delayed.contains(task)) {
+			delayed.remove(task);
 		}
 		if (inactive.contains(task)) {
 			inactive.remove(task);
@@ -169,12 +200,29 @@ public class TaskManager {
 			System.err.println("Received nulled task");
     		return;
     	}
-		if (active.size() >= TaskConfig.getConfig().getMaxParallel()) {
-			pending.add(task);
+		if (task.getPolicy() == TaskPolicy.FORCE) {
+			executeForcefully(task);
 			return;
+		}
+		if (task.getPolicy() == TaskPolicy.SINGLE
+				&& !taskByClassIsActive(task.getClass().getSimpleName()).isEmpty()) {
+			delayed.add(task);
+			return;
+		}
+		if (delayed.contains(task)) {
+			delayed.remove(task);
 		}
 		Future<?> sf = executorService.submit(task);
     	active.put(task, sf);
+	}
+	
+	/**
+	 * Executes a task forcefully.
+	 * 
+	 * @param task The task to execute.
+	 */
+	public static void executeForcefully(Task task) {
+		alternateExecutorService.execute(task);
 	}
 	
 	/**
@@ -233,14 +281,15 @@ public class TaskManager {
 	 * Disposes the task manager.
 	 */
 	public static void dispose() {
-		pending.clear();
 		inactive.clear();
+		delayed.clear();
 		
 		for (Task task : active.keySet()) {
 			stop(task);
 		}
 		active.clear();
-    	executorService.shutdownNow();
+		executorService.shutdownNow();
+		alternateExecutorService.shutdownNow();
 	}
 	
 	/**
@@ -256,15 +305,15 @@ public class TaskManager {
 	}
 	
 	/**
-	 * Retrieves the tasks with a given class.
+	 * Retrieves the active tasks by a given class name.
 	 * 
-	 * @param c The class.
+	 * @param className The class name.
 	 * 
-	 * @return The tasks.
+	 * @return The name.
 	 */
-	public static List<Task> getTasksForClass(Class<?> c) {
-		return getAllTasks().stream()
-				.filter(t -> t.getClass().isInstance(c))
+	public static List<Task> taskByClassIsActive(String className) {
+		return getActiveTasks().stream()
+				.filter(t -> t.getClass().getSimpleName().equals(className))
 				.collect(Collectors.toList());
 	}
 	
@@ -273,8 +322,17 @@ public class TaskManager {
 	 * 
 	 * @return The pending tasks.
 	 */
-	public static List<Task> getPendingTasks() {
-		return pending;
+	public static int getQueueSize() {
+		return executorService.getQueue().size() + delayed.size();
+	}
+	
+	/**
+	 * Retrieves the delayed tasks.
+	 * 
+	 * @return The delayed tasks.
+	 */
+	public static List<Task> getDelayedTasks() {
+		return delayed;
 	}
 	
 	/**
@@ -296,18 +354,61 @@ public class TaskManager {
 	}
 	
 	/**
-	 * Retrieves all the tasks.
+	 * Retrieves whether a task is delayed or not.
 	 * 
-	 * @return The tasks.
+	 * @param task The task.
+	 * 
+	 * @return The result.
 	 */
-	public static List<Task> getAllTasks() {
-		List<Task> all = new ArrayList<>();
-		
-		all.addAll(getActiveTasks());
-		all.addAll(getPendingTasks());
-		all.addAll(getInactiveTasks());
-		
-		return all;
+	public static boolean isInDelayed(Task task) {
+		return delayed.contains(task);
+	}
+	
+	/**
+	 * Retrieves the amount of delayed tasks.
+	 * 
+	 * @return The result.
+	 */
+	public static int getDelayedCount() {
+		return delayed.size();
+	}
+	
+	/**
+	 * Retrieves whether a task is queued or not.
+	 * 
+	 * @param task The task.
+	 * 
+	 * @return The result.
+	 */
+	public static boolean isInQueue(Task task) {
+		return executorService.getQueue().contains(task);
+	}
+	
+	/**
+	 * Retrieves the amount of queued tasks.
+	 * 
+	 * @return The result.
+	 */
+	public static int getQueuedCount() {
+		return executorService.getQueue().size();
+	}
+	
+	/**
+	 * Retrieves the active task count as string.
+	 * 
+	 * @return The result.
+	 */
+	public static String getActive() {
+		return executorService.getActiveCount() + "/" + executorService.getMaximumPoolSize();
+	}
+	
+	/**
+	 * Retrieves the amount of completed tasks.
+	 * 
+	 * @return The result.
+	 */
+	public static long getCompleted() {
+		return executorService.getCompletedTaskCount();
 	}
 
 }
