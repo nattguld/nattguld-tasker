@@ -72,7 +72,7 @@ public class TaskManager {
 					return;
 				}
 				try {
-		            Future<?> sf = executorService.submit(task);
+		            Future<?> sf = alternateExecutorService.submit(task);
 		            active.put(task, sf);
 		            
 		            System.err.println(task.getName() + " has been rejected but re-executed through alternate executor [Policy: " + task.getPolicy().getName() + "]");
