@@ -150,7 +150,6 @@ public abstract class Task implements Runnable {
 		
 		try {
 			setStatus("Executing " + getName());
-			
 			respState = executeTask();
 
 		} catch (Exception ex) {

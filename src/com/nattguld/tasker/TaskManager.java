@@ -82,12 +82,8 @@ public class TaskManager {
 		        }
 			}
     	};
-    	/*executorService = new ThreadPoolExecutor(TaskConfig.getConfig().getMaxParallel(), TaskConfig.getConfig().getMaxParallel(), 60L, TimeUnit.SECONDS
-    			, new SynchronousQueue<Runnable>(), rejectedExecutionHandler);*/
     	executorService = new ThreadPoolExecutor(TaskConfig.getConfig().getMaxParallel(), TaskConfig.getConfig().getMaxParallel(), 60L, TimeUnit.SECONDS
     			, new LinkedBlockingQueue<Runnable>(), rejectedExecutionHandler);
-    	/*executorService = new ThreadPoolExecutor(TaskConfig.getConfig().getMaxParallel(), TaskConfig.getConfig().getMaxParallel(), 0L, TimeUnit.MILLISECONDS
-    			, new LinkedBlockingQueue<Runnable>(), rejectedExecutionHandler);*/
     	executorService.allowCoreThreadTimeOut(true);
     	
     	processTasks();

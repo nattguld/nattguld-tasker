@@ -84,14 +84,16 @@ public abstract class StepTask extends Task {
 	
 	@Override
 	protected TaskState executeTask() throws Exception {
-		buildStepFlow();
-		
-		if (steps.isEmpty()) {
-			System.err.println("[" + getName() + "]: Empty step flow");
-			return TaskState.ERROR;
+		if (stepDeque.isEmpty()) {
+			buildStepFlow();
+
+			stepDeque.addAll(steps);
+
+			if (stepDeque.isEmpty()) {
+				System.err.println("[" + getName() + "]: Empty step flow");
+				return TaskState.ERROR;
+			}
 		}
-		stepDeque.addAll(steps);
-		
 		while (!stepDeque.isEmpty()) {
 			if (getState() == TaskState.CANCEL) {
 				setStatus("Task has been cancelled");
@@ -102,15 +104,17 @@ public abstract class StepTask extends Task {
 			setStatus(currentStep.getName() + ": Executing");
 			currentStep.setState(StepState.IN_PROGRESS);
 			
-			try {
-				while (currentStep.getState() == StepState.IN_PROGRESS) {
+			while (currentStep.getState() == StepState.IN_PROGRESS) {
+				try {
 					currentStep.setState(currentStep.execute());
-					Misc.sleep(getStepDelay());
+					
+				} catch (Exception ex) {
+					ex.printStackTrace();
+					onException(currentStep, ex);
+					currentStep.setState(StepState.EXCEPTION);
+					break;
 				}
-			} catch (Exception ex) {
-				ex.printStackTrace();
-				onException(currentStep, ex);
-				currentStep.setState(StepState.EXCEPTION);
+				Misc.sleep(getStepDelay());
 			}
 			if (currentStep.getState() == StepState.CANCEL) {
 				setStatus(currentStep.getName() + ": Cancelled Flow");
