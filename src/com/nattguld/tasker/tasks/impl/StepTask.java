@@ -77,6 +77,15 @@ public abstract class StepTask extends Task {
 		super.onStart();
 	}
 	
+	@Override
+	protected void onFinish() {
+		if (isTimedOut()) {
+			setStatus("Timed out at " + (Objects.nonNull(currentStep) 
+					? (currentStep.getName() + ": " + currentStep.getStatus()) : "NA"));
+		}
+		super.onFinish();
+	}
+	
 	/**
 	 * Builds the step flow.
 	 */
@@ -116,6 +125,8 @@ public abstract class StepTask extends Task {
 				}
 				Misc.sleep(getStepDelay());
 			}
+			refreshStartTime();
+			
 			if (currentStep.getState() == StepState.CANCEL) {
 				setStatus(currentStep.getName() + ": Cancelled Flow");
 				return TaskState.CANCEL;

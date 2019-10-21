@@ -27,14 +27,20 @@ public class TaskConfig extends Config {
 	/**
 	 * The maximum amount of parallel tasks allowed.
 	 */
-	private int maxParallel = 25 * Runtime.getRuntime().availableProcessors();
+	private int maxParallel = 20 * Runtime.getRuntime().availableProcessors();
+	
+	/**
+	 * The maximum queue size.
+	 */
+	private int maxQueueSize = 100;
 
 
 	@Override
 	protected void read(JsonReader reader) {
 		this.debug = reader.getAsBoolean("debug", false);
 		this.removeFailed = reader.getAsBoolean("remove_failed", true);
-		this.maxParallel = reader.getAsInt("max_parallel", 40 * Runtime.getRuntime().availableProcessors());
+		this.maxParallel = reader.getAsInt("max_parallel", 20 * Runtime.getRuntime().availableProcessors());
+		this.maxQueueSize = reader.getAsInt("max_queue_size", 100);
 	}
 
 	@Override
@@ -42,6 +48,7 @@ public class TaskConfig extends Config {
 		writer.write("debug", debug);
 		writer.write("remove_failed", removeFailed);
 		writer.write("max_parallel", maxParallel);
+		writer.write("max_queue_size", maxQueueSize);
 	}
 	
 	@Override
@@ -111,6 +118,27 @@ public class TaskConfig extends Config {
 	 */
 	public int getMaxParallel() {
 		return maxParallel;
+	}
+	
+	/**
+	 * Modifies the maximum queue size.
+	 * 
+	 * @param maxQueueSize The new maximum queue size.
+	 * 
+	 * @return The config.
+	 */
+	public TaskConfig setMaxQueueSize(int maxQueueSize) {
+		this.maxQueueSize = maxQueueSize;
+		return this;
+	}
+	
+	/**
+	 * Retrieves the maximum queue size.
+	 * 
+	 * @return The maximum queue size.
+	 */
+	public int getMaxQueueSize() {
+		return maxQueueSize;
 	}
 	
 	/**

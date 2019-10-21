@@ -89,7 +89,7 @@ public abstract class Step {
 	 * @return The finish task state.
 	 */
 	protected TaskState runExternalTask(Task external) {
-		TaskManager.executeForcefully(external);
+		TaskManager.executeAlternatively(external);
 		
 		while (external.isActive()) {
 			setStatus(external.getStatus());

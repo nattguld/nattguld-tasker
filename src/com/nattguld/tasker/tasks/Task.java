@@ -18,6 +18,11 @@ import com.nattguld.tasker.util.Misc;
 public abstract class Task implements Runnable {
 	
 	/**
+	 * The default task timeout.
+	 */
+	private static final long DEFAULT_TASK_TIMEOUT = 30 * 60 * 1000;
+	
+	/**
 	 * The default task repeat delay in milliseconds.
 	 */
 	public static final int DEFAULT_REPEAT_DELAY = 1000;
@@ -36,6 +41,16 @@ public abstract class Task implements Runnable {
 	 * The name of the task.
 	 */
 	private final String name;
+	
+	/**
+	 * The task start time.
+	 */
+	private long startTime;
+	
+	/**
+	 * The task timeout time.
+	 */
+	private long timeout;
 	
 	/**
 	 * The current state of the task.
@@ -77,6 +92,8 @@ public abstract class Task implements Runnable {
 		this.repeatDelay = DEFAULT_REPEAT_DELAY;
 		this.attributes = new Attributes();
 		this.props = new ArrayList<>();
+		this.startTime = 0L;
+		this.timeout = DEFAULT_TASK_TIMEOUT;
 	}
 	
 	/**
@@ -85,7 +102,6 @@ public abstract class Task implements Runnable {
 	 * @return The result.
 	 */
 	protected boolean preConditionsMet() {
-		//TODO override when required
 		return true;
 	}
 	
@@ -106,6 +122,7 @@ public abstract class Task implements Runnable {
 		
 		try {
 			while (!handleTask()) {
+				refreshStartTime();
 				Misc.sleep(getRepeatDelay());
 			}
 		} catch (Exception ex) {
@@ -118,7 +135,7 @@ public abstract class Task implements Runnable {
 	 * Executes when the flow is finished.
 	 */
 	protected void onFinish() {
-		//TODO override when required
+		this.startTime = 0L;
 	}
 	
 	/**
@@ -204,6 +221,40 @@ public abstract class Task implements Runnable {
 		
 		this.attempts = 0;
 		this.status = "In queue";
+		
+		refreshStartTime();
+	}
+	
+	/**
+	 * Modifies the task timeout time.
+	 * 
+	 * @param timeout The new timeout.
+	 * 
+	 * @return The task.
+	 */
+	public Task setTimeout(long timeout) {
+		this.timeout = timeout;
+		return this;
+	}
+	
+	/**
+	 * Refreshes the start time.
+	 * 
+	 * @return The task.
+	 */
+	protected Task refreshStartTime() {
+		this.startTime = System.currentTimeMillis();
+		return this;
+	}
+	
+	/**
+	 * Retrieves whether the task timed out or not.
+	 * 
+	 * @return The result.
+	 */
+	public boolean isTimedOut() {
+		return startTime <= 0L ? false : (System.currentTimeMillis() - startTime > timeout) 
+				&& getState() != TaskState.PAUSED && getState() != TaskState.IN_QUEUE;
 	}
 	
 	/**
@@ -238,6 +289,7 @@ public abstract class Task implements Runnable {
 		if (getState() != TaskState.PAUSED) {
 			return this;
 		}
+		refreshStartTime();
 		return setState(TaskState.RUNNING);
 	}
 	

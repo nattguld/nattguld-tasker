@@ -9,15 +9,15 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import com.nattguld.tasker.callbacks.ICallback;
 import com.nattguld.tasker.cfg.TaskConfig;
 import com.nattguld.tasker.tasks.Task;
+import com.nattguld.tasker.tasks.TaskFuture;
+import com.nattguld.tasker.tasks.TaskPoolExecutor;
 import com.nattguld.tasker.tasks.TaskProperty;
 import com.nattguld.tasker.tasks.TaskState;
 import com.nattguld.tasker.util.Misc;
@@ -53,56 +53,58 @@ public class TaskManager {
     /**
      * The executor service for threading.
      */
-    private static ThreadPoolExecutor executorService;
+    private static TaskPoolExecutor executorService;
     
     /**
      * The executor service for threading.
      */
     private static ExecutorService alternateExecutorService = Executors.newCachedThreadPool();
-    
+
     
     static {
-    	RejectedExecutionHandler rejectedExecutionHandler = new RejectedExecutionHandler() {
+    	RejectedExecutionHandler rejectionHandler = new RejectedExecutionHandler() {
 			@Override
-			public void rejectedExecution(Runnable runnable, ThreadPoolExecutor threadPoolExecutor) {
-				Task task = (Task)runnable;
-				
-				if (task.getPolicy() == TaskPolicy.OPTIONAL) {
-					System.err.println(task.getName() + " has been rejected and ignored [Policy: " + task.getPolicy().getName() + "]");
-					return;
-				}
+			public void rejectedExecution(Runnable runnable, ThreadPoolExecutor executor) {
 				try {
-		            Future<?> sf = alternateExecutorService.submit(task);
-		            active.put(task, sf);
-		            
-		            System.err.println(task.getName() + " has been rejected but re-executed through alternate executor [Policy: " + task.getPolicy().getName() + "]");
-		            
-		        } catch(Exception e) {
-		        	System.err.println(task.getName() + " has been rejected and failed to re-execute [Policy: " + task.getPolicy().getName() + "]");
-		        }
+					TaskFuture<?> tf = (TaskFuture<?>)runnable;
+					Task task = tf.getTask();
+
+					switch (task.getPolicy()) {
+					case DEFAULT:
+					case SINGLE:
+						if (!delayed.contains(task)) {
+							delayed.add(task);
+							System.err.println(task.getName() + " has been delayed [Policy: " + task.getPolicy().getName() + "]");
+						}
+						return;
+						
+					case FORCE:
+						executeAlternatively(task);
+						break;
+						
+					case OPTIONAL:
+						System.err.println(task.getName() + " has been rejected and ignored [Policy: " + task.getPolicy().getName() + "]");
+						return;
+					}
+				} catch (Exception ex) {
+					ex.printStackTrace();
+				}
 			}
-    	};
-    	executorService = new ThreadPoolExecutor(TaskConfig.getConfig().getMaxParallel(), TaskConfig.getConfig().getMaxParallel(), 60L, TimeUnit.SECONDS
-    			, new LinkedBlockingQueue<Runnable>(), rejectedExecutionHandler);
+		};
+    	/*executorService = new ThreadPoolExecutor(TaskConfig.getConfig().getMaxParallel(), TaskConfig.getConfig().getMaxParallel(), 60L, TimeUnit.SECONDS
+    			, new LinkedBlockingQueue<Runnable>(), rejectedExecutionHandler);*/
+		executorService = new TaskPoolExecutor(TaskConfig.getConfig().getMaxParallel(), TaskConfig.getConfig().getMaxParallel(), TaskConfig.getConfig().getMaxQueueSize(), rejectionHandler);
+    	//executorService = new TaskPoolExecutor(1, 2, 1, rejectionHandler);
     	executorService.allowCoreThreadTimeOut(true);
     	
     	processTasks();
     }
-    
-    /**
-     * Updates the max parallel threads count.
-     * 
-     * @param maxParallel The new count.
-     */
-	public static void updateMaxParallel(int maxParallel) {
-		executorService.setMaximumPoolSize(maxParallel);
-	}
 	
     /**
      * Processes the tasks.
      */
     private static void processTasks() {
-    	executorService.execute(new Runnable() {
+    	alternateExecutorService.execute(new Runnable() {
 			@Override
 			public void run() {
 				while (true) {
@@ -112,12 +114,17 @@ public class TaskManager {
 							continue;
 						}
 						for (Task task : active.keySet()) {
-							if (task.isActive()) {
+							boolean timedOut = task.isTimedOut();
+							
+							if (task.isActive() && !timedOut) {
 								continue;
+							}
+							if (timedOut) {
+								System.err.println(task.getName() + " timed out.");
 							}
 							remove(task);
 						}
-						if (executorService.getQueue().size() < executorService.getMaximumPoolSize()) {
+						if (executorService.getQueue().size() < executorService.getMaxQueueSize()) {
 							for (Task delayedTask : delayed) {
 								if (delayedTask.getPolicy() == TaskPolicy.SINGLE 
 										&& !taskByClassIsActive(delayedTask.getClass().getSimpleName()).isEmpty()) {
@@ -125,7 +132,7 @@ public class TaskManager {
 								}
 								async(delayedTask);
 								
-								if (executorService.getQueue().size() >= executorService.getMaximumPoolSize()) {
+								if (executorService.getQueue().size() >= executorService.getMaxQueueSize()) {
 									break;
 								}
 							}
@@ -138,6 +145,15 @@ public class TaskManager {
 			}
     	});
     }
+    
+    /**
+     * Updates the max parallel threads count.
+     * 
+     * @param maxParallel The new count.
+     */
+	public static void updateMaxParallel(int maxParallel) {
+		executorService.setMaximumPoolSize(maxParallel);
+	}
     
 	/**
 	 * Removes a task.
@@ -185,6 +201,16 @@ public class TaskManager {
 			future.cancel(true);
 		}
 	}
+	
+    /**
+     * Executes a task alternatively ignoring defaults.
+     * 
+     * @param task The task to execute.
+     */
+    public static void executeAlternatively(Task task) {
+    	Future<?> sf = alternateExecutorService.submit(task);
+    	active.put(task, sf);
+    }
 
     /**
      * Submits a task in an asynchronous matter.
@@ -197,12 +223,14 @@ public class TaskManager {
     		return;
     	}
 		if (task.getPolicy() == TaskPolicy.FORCE) {
-			executeForcefully(task);
+			executeAlternatively(task);
 			return;
 		}
 		if (task.getPolicy() == TaskPolicy.SINGLE
 				&& !taskByClassIsActive(task.getClass().getSimpleName()).isEmpty()) {
-			delayed.add(task);
+			if (!delayed.contains(task)) {
+				delayed.add(task);
+			}
 			return;
 		}
 		if (delayed.contains(task)) {
@@ -210,15 +238,6 @@ public class TaskManager {
 		}
 		Future<?> sf = executorService.submit(task);
     	active.put(task, sf);
-	}
-	
-	/**
-	 * Executes a task forcefully.
-	 * 
-	 * @param task The task to execute.
-	 */
-	public static void executeForcefully(Task task) {
-		alternateExecutorService.execute(task);
 	}
 	
 	/**
@@ -245,32 +264,25 @@ public class TaskManager {
 	 * @return The callback.
 	 */
 	public static Object callback(Task task) {
-		async(task);
-		return waitAndGetResponse(task);
-	}
-	
-	/**
-	 * Retrieves the task response or waits for it if not assigned yet.
-	 * 
-	 * @param task The task.
-	 * 
-	 * @param delay The delay to re-check if a response has been assigned or not.
-	 * 
-	 * @param timeout The timeout if no response has been received.
-	 * 
-	 * @return The response.
-	 */
-	public static Object waitAndGetResponse(Task task) {
 		if (!(task instanceof ICallback<?>)) {
 			System.err.println("Unable to get response from " + task.getName() + " as it's not a callback task.");
 			return task.getState();
 		}
-		ICallback<?> callback = (ICallback<?>)task;
-
-		while (task.isActive()) {
-			Misc.sleep(Task.DEFAULT_REPEAT_DELAY);
-		}
-		return callback.getCallbackResponse().getResponse();
+		sync(task);
+		
+		return ((ICallback<?>)task).getCallbackResponse().getResponse();
+	}
+	
+	/**
+	 * Retries a task.
+	 * 
+	 * @param task The task to retry.
+	 * 
+	 * @return The submitted task.
+	 */
+	public static void retry(Task task) {
+		task.reset();
+		async(task);
 	}
 	
 	/**
@@ -286,18 +298,6 @@ public class TaskManager {
 		active.clear();
 		executorService.shutdownNow();
 		alternateExecutorService.shutdownNow();
-	}
-	
-	/**
-	 * Retries a task.
-	 * 
-	 * @param task The task to retry.
-	 * 
-	 * @return The submitted task.
-	 */
-	public static void retry(Task task) {
-		task.reset();
-		async(task);
 	}
 	
 	/**
