@@ -123,6 +123,10 @@ public class TaskManager {
 								System.err.println(task.getName() + " timed out.");
 							}
 							remove(task);
+							
+							if (task.hasProperty(TaskProperty.KEEP_ALIVE)) {
+								executeAlternatively(task);
+							}
 						}
 						if (executorService.getQueue().size() < executorService.getMaxQueueSize()) {
 							for (Task delayedTask : delayed) {
@@ -222,7 +226,7 @@ public class TaskManager {
 			System.err.println("Received nulled task");
     		return;
     	}
-		if (task.getPolicy() == TaskPolicy.FORCE) {
+		if (task.getPolicy() == TaskPolicy.FORCE || task.hasProperty(TaskProperty.KEEP_ALIVE)) {
 			executeAlternatively(task);
 			return;
 		}
@@ -284,6 +288,7 @@ public class TaskManager {
 		task.reset();
 		async(task);
 	}
+	
 	
 	/**
 	 * Disposes the task manager.
