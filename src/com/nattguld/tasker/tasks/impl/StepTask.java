@@ -156,9 +156,9 @@ public abstract class StepTask extends Task {
 	
 	@Override
 	public void reset() {
-		super.reset();
-		
 		stepDeque.clear();
+		
+		super.reset();
 	}
 	
 	/**

@@ -181,7 +181,6 @@ public abstract class Task implements Runnable {
 		}
 		if (respState == TaskState.RETRY) {
 			setState(TaskState.IN_QUEUE);
-			reset();
 			onStart();
 			return false;
 		}
@@ -209,7 +208,7 @@ public abstract class Task implements Runnable {
 			setState(TaskState.IN_QUEUE);
 			return false;
 		}
-		setState(TaskState.IN_QUEUE);
+		onStart();
 		return false;
 	}
 	
