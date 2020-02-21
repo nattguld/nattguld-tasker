@@ -142,7 +142,7 @@ public abstract class Step {
 	 * 
 	 * @param status The new status.
 	 */
-	protected void setStatus(String status) {
+	public void setStatus(String status) {
 		if (getStatus().equals(status)) {
 			return;
 		}
